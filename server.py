@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-렌탈 발주 시스템 - 서버 (Render 배포용)
-"""
-
 from flask import Flask, request, send_file, jsonify
 import os, io
 from openpyxl import load_workbook
@@ -37,7 +33,7 @@ ROW_POST_END   = 71
 
 @app.route('/')
 def index():
-    return app.send_static_file('발주_입력_프로그램.html')
+    return app.send_static_file('index.html')
 
 @app.route('/ping')
 def ping():
@@ -111,6 +107,5 @@ def export():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print(f"✅ 서버 시작: http://localhost:{port}")
-    print(f"✅ 양식 파일: {'있음' if os.path.exists(TEMPLATE_PATH) else '없음 ⚠️'}")
+    print(f"서버 시작: http://localhost:{port}")
     app.run(host='0.0.0.0', port=port, debug=False)
