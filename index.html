@@ -328,56 +328,7 @@ code{background:var(--surface2);border:1px solid var(--border);border-radius:4px
 
 <script>
 // ══ 품목 정의 (컬럼 번호 1-based, 검증 완료) ══
-const ITEMS = [
-  {key:'I', col:9,  cat:'진열대 1M',         name:'1단진열대',     detail:'',              code:'ED-01'},
-  {key:'J', col:10, cat:'진열대 1M',         name:'2단진열대',     detail:'',              code:'ED-02'},
-  {key:'K', col:11, cat:'진열대 1M',         name:'3단진열대',     detail:'',              code:'ED-03'},
-  {key:'L', col:12, cat:'진열대 1.5M',       name:'1단진열대',     detail:'',              code:'ED-01'},
-  {key:'M', col:13, cat:'진열대 1.5M',       name:'2단진열대',     detail:'',              code:'ED-02'},
-  {key:'N', col:14, cat:'진열대 1.5M',       name:'3단진열대',     detail:'',              code:'ED-03'},
-  {key:'O', col:15, cat:'진열대 2M',         name:'1단진열대',     detail:'',              code:'ED-01'},
-  {key:'P', col:16, cat:'진열대 2M',         name:'2단진열대',     detail:'',              code:'ED-02'},
-  {key:'Q', col:17, cat:'진열대 2M',         name:'3단진열대',     detail:'',              code:'ED-03'},
-  {key:'R', col:18, cat:'쇼케이스',           name:'1단쇼케이스',   detail:'',              code:'ED-07'},
-  {key:'S', col:19, cat:'쇼케이스',           name:'3단쇼케이스',   detail:'',              code:'ED-08'},
-  {key:'T', col:20, cat:'쇼케이스',           name:'쇼케이스',      detail:'(2/1)',         code:'ED-09'},
-  {key:'U', col:21, cat:'쇼케이스',           name:'쇼케이스',      detail:'(타워)',        code:'ED-10'},
-  {key:'V', col:22, cat:'진열대/선반',        name:'진열대',        detail:'560×560 H1000', code:'ED-05'},
-  {key:'W', col:23, cat:'진열대/선반',        name:'선반',          detail:'',              code:'ED-18'},
-  {key:'Z',  col:26, cat:'원형테이블',        name:'백색',          detail:'Ø750',          code:'ET-01'},
-  {key:'AA', col:27, cat:'원형테이블',        name:'하이그로시',    detail:'Ø600',          code:'ET-01-1'},
-  {key:'AB', col:28, cat:'원형테이블',        name:'하이그로시',    detail:'Ø700',          code:'ET-01-1'},
-  {key:'AC', col:29, cat:'원형테이블',        name:'무늬목',        detail:'Ø750',          code:'ET-02'},
-  {key:'AF', col:32, cat:'사각테이블(다리1)', name:'흰색',          detail:'600×600',       code:'ET-09'},
-  {key:'AG', col:33, cat:'사각테이블(다리1)', name:'흰색',          detail:'750×750',       code:'ET-09'},
-  {key:'AH', col:34, cat:'사각테이블(다리1)', name:'상판하이그로시',detail:'700×700',       code:'ET-09-1'},
-  {key:'AK', col:37, cat:'사각테이블(다리4)', name:'450×1200',      detail:'',              code:'ET-11'},
-  {key:'AL', col:38, cat:'사각테이블(다리4)', name:'700×1200',      detail:'',              code:'ET-12'},
-  {key:'AM', col:39, cat:'사각테이블(다리4)', name:'700×1800',      detail:'',              code:'ET-12'},
-  {key:'AN', col:40, cat:'사각테이블(다리4)', name:'800×1200',      detail:'하이그로시',    code:'ET-12-2'},
-  {key:'AO', col:41, cat:'사각테이블(다리4)', name:'듀라테이블',    detail:'1800',          code:'ET-14'},
-  {key:'AP', col:42, cat:'사각테이블(다리4)', name:'테이블보(검)',  detail:'',              code:''},
-  {key:'AQ', col:43, cat:'사각테이블(다리4)', name:'테이블보(백)',  detail:'',              code:''},
-  {key:'AT', col:46, cat:'의자',              name:'접의자',        detail:'',              code:'EC-01'},
-  {key:'AU', col:47, cat:'의자',              name:'크림접의자',    detail:'',              code:'EC-01-1'},
-  {key:'AV', col:48, cat:'의자',              name:'피노키오(검)',  detail:'',              code:'EC-06'},
-  {key:'AW', col:49, cat:'의자',              name:'피노키오(백)',  detail:'',              code:'EC-06'},
-  {key:'AX', col:50, cat:'의자',              name:'땅콩(검)',      detail:'',              code:'EC-07'},
-  {key:'AY', col:51, cat:'의자',              name:'땅콩(백)',      detail:'',              code:'EC-07'},
-  {key:'AZ', col:52, cat:'의자',              name:'파워의자',      detail:'',              code:'EC-11'},
-  {key:'BC', col:55, cat:'비품',              name:'일카',          detail:'',              code:'EB-01'},
-  {key:'BD', col:56, cat:'비품',              name:'신카',          detail:'',              code:'EB-02'},
-  {key:'BE', col:57, cat:'비품',              name:'차단봉(청색)',  detail:'',              code:'EB-11'},
-  {key:'BF', col:58, cat:'비품',              name:'차단봉(검정)',  detail:'',              code:'EB-11'},
-  {key:'BG', col:59, cat:'비품',              name:'휴지통 50L',    detail:'',              code:'EB-15'},
-  {key:'BJ', col:62, cat:'기타',              name:'냉온수기',      detail:'',              code:'EE-01'},
-  {key:'BK', col:63, cat:'기타',              name:'생수',          detail:'',              code:'EE-01-1'},
-  {key:'BL', col:64, cat:'기타',              name:'냉장고 80L',    detail:'',              code:'EE-02'},
-  {key:'BM', col:65, cat:'기타',              name:'LED TV 43"',    detail:'',              code:'EE-12'},
-  {key:'BN', col:66, cat:'기타',              name:'LED TV 50"',    detail:'',              code:'EE-12'},
-  {key:'BO', col:67, cat:'기타',              name:'LED TV 65"',    detail:'',              code:'EE-12'},
-  {key:'BR', col:70, cat:'패브릭',            name:'패브릭인포',    detail:'1200',          code:''},
-];
+let ITEMS = [];  // /api/items 에서 동적 로드
 
 const BASE = {no:1,booth:2,company:3,payment:4,subtotal:6,memo:71,bt:72,bu:73,bv:74};
 const ROW_PRE_START=13, ROW_PRE_END=63, ROW_POST_START=67, ROW_POST_END=71;
@@ -406,7 +357,7 @@ async function checkServer(){
 checkServer();
 
 // ── 품목 UI 빌드 ──
-(function(){
+(function buildCats(){
   const catMap={};
   ITEMS.forEach(item=>{ if(!catMap[item.cat]) catMap[item.cat]=[]; catMap[item.cat].push(item); });
   const colors={'진열대 1M':'#4f8ef7','진열대 1.5M':'#818cf8','진열대 2M':'#a78bfa','쇼케이스':'#fbbf24','진열대/선반':'#f472b6','원형테이블':'#34d399','사각테이블(다리1)':'#60a5fa','사각테이블(다리4)':'#38bdf8','의자':'#fb923c','비품':'#c084fc','기타':'#2dd4bf','패브릭':'#f9a8d4'};
@@ -418,7 +369,7 @@ checkServer();
     el.innerHTML=`<div class="cat-hdr" onclick="toggleCat(this.closest('.cat-block'))"><div class="cat-dot" style="background:${color}"></div><div class="cat-name">${cat}</div><div class="cat-badge">${items.length}종</div><div class="cat-arrow">▼</div></div><div class="cat-items">${items.map(item=>`<div class="item-cell"><div class="item-name">${item.name}</div>${item.detail?`<div class="item-detail">${item.detail}</div>`:''} ${item.code?`<div class="item-code">${item.code}</div>`:''}<input type="number" min="0" class="item-input" id="ii-${item.key}" placeholder="0" oninput="onQ(this)"></div>`).join('')}</div>`;
     wrap.appendChild(el);
   });
-})();
+});
 
 function toggleCat(block){ block.classList.toggle('collapsed'); }
 function onQ(el){ const v=parseInt(el.value); el.classList.toggle('filled',v>0); if(v<=0) el.value=''; updateFoot(); }
@@ -570,7 +521,16 @@ function doExportClient(){
 
 function toast(msg,type){ const el=document.createElement('div'); el.className='toast'+(type?' '+type:''); const icon=type==='err'?'❌':type==='info'?'ℹ️':'✅'; el.innerHTML=`<span>${icon}</span><span>${msg}</span>`; document.getElementById('toasts').appendChild(el); setTimeout(()=>el.remove(),3500); }
 
-updateBadge(); updateFoot();
+async function init(){
+  try {
+    const res = await fetch('/api/items');
+    if(res.ok){ ITEMS = await res.json(); }
+  } catch(e){ console.log('로컬 실행 중, 기본 품목 사용'); }
+  buildCats();
+  updateBadge();
+  updateFoot();
+}
+init();
 </script>
 </body>
 </html>

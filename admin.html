@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>관리자 — 품목 관리</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{--bg:#0f1117;--sur:#1a1d27;--sur2:#22263a;--bdr:#2e3350;--acc:#4f8ef7;--acc2:#7c5cfc;--grn:#36d399;--red:#ff6b6b;--ylw:#fbbf24;--txt:#e8eaf6;--txt2:#8892b0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:'Noto Sans KR',sans-serif;font-size:14px;min-height:100vh;}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+.login-box{background:var(--sur);border:1px solid var(--bdr);border-radius:14px;padding:36px;width:340px;text-align:center;}
+.login-icon{font-size:36px;margin-bottom:14px;}
+.login-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+.login-sub{font-size:12px;color:var(--txt2);margin-bottom:24px;}
+.login-input{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;color:var(--txt);font-family:inherit;font-size:14px;outline:none;width:100%;margin-bottom:12px;text-align:center;letter-spacing:4px;}
+.login-input:focus{border-color:var(--acc);}
+
+/* HEADER */
+.header{background:var(--sur);border-bottom:1px solid var(--bdr);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-left{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.header-title{font-size:15px;font-weight:700;}
+.header-sub{font-size:11px;color:var(--txt2);}
+
+/* MAIN */
+.main{padding:24px;max-width:1100px;margin:0 auto;}
+.sec-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--txt2);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--bdr);}
+.section{margin-bottom:28px;}
+
+/* ADD FORM */
+.add-form{background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:20px;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11px;font-weight:600;color:var(--txt2);}
+.field input,.field select{background:var(--sur2);border:1px solid var(--bdr);border-radius:7px;padding:8px 10px;color:var(--txt);font-family:inherit;font-size:13px;outline:none;width:100%;}
+.field input:focus,.field select:focus{border-color:var(--acc);}
+.field .hint{font-size:10px;color:var(--txt2);margin-top:2px;}
+
+/* TABLE */
+.tbl-wrap{background:var(--sur);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;}
+.tbl-toolbar{padding:12px 16px;background:var(--sur2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;}
+.search-input{background:var(--bg);border:1px solid var(--bdr);border-radius:7px;padding:7px 12px;color:var(--txt);font-family:inherit;font-size:13px;outline:none;width:220px;}
+.search-input:focus{border-color:var(--acc);}
+.cat-filter{background:var(--bg);border:1px solid var(--bdr);border-radius:7px;padding:7px 10px;color:var(--txt);font-family:inherit;font-size:13px;outline:none;}
+.item-count{margin-left:auto;font-size:12px;color:var(--txt2);}
+
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.5px;border-bottom:1px solid var(--bdr);background:var(--sur2);}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--bdr);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(79,142,247,.03);}
+
+.td-key{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--acc2);font-weight:600;}
+.td-col{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txt2);}
+.td-cat{font-size:11px;background:rgba(79,142,247,.12);color:var(--acc);padding:2px 8px;border-radius:99px;white-space:nowrap;}
+.td-code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ylw);}
+.td-actions{display:flex;gap:6px;}
+
+/* inline edit */
+td input.edit-field{background:var(--sur2);border:1px solid var(--acc);border-radius:5px;padding:4px 7px;color:var(--txt);font-family:inherit;font-size:12px;outline:none;width:100%;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;}
+.btn-primary:hover{opacity:.88;}
+.btn-secondary{background:var(--sur2);color:var(--txt);border:1px solid var(--bdr);}
+.btn-secondary:hover{border-color:var(--acc);color:var(--acc);}
+.btn-danger{background:rgba(255,107,107,.12);color:var(--red);border:1px solid rgba(255,107,107,.3);}
+.btn-danger:hover{background:rgba(255,107,107,.22);}
+.btn-success{background:rgba(54,211,153,.12);color:var(--grn);border:1px solid rgba(54,211,153,.3);}
+.btn-success:hover{background:rgba(54,211,153,.22);}
+.btn-sm{padding:4px 9px;font-size:11px;border-radius:5px;}
+
+/* TOAST */
+.toast-wrap{position:fixed;top:70px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px;}
+.toast{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:10px 16px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;animation:si .2s ease;border-left:3px solid var(--grn);}
+.toast.err{border-left-color:var(--red);}
+@keyframes si{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.empty{text-align:center;padding:40px;color:var(--txt2);font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">관리자 로그인</div>
+    <div class="login-sub">품목 관리 페이지입니다</div>
+    <input class="login-input" type="password" id="pwInput" placeholder="비밀번호" onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="doLogin()">로그인</button>
+    <div style="margin-top:10px;font-size:11px;color:var(--txt2)">기본 비밀번호: 1234 (Render 환경변수 ADMIN_PW로 변경)</div>
+  </div>
+</div>
+
+<!-- 메인 화면 -->
+<div id="mainWrap" style="display:none">
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo-icon">⚙️</div>
+    <div>
+      <div class="header-title">품목 관리자</div>
+      <div class="header-sub">오더지 품목 추가 · 수정 · 삭제</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="/" class="btn btn-secondary">← 발주 입력으로</a>
+    <button class="btn btn-secondary" onclick="logout()">로그아웃</button>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<div class="main">
+
+  <!-- 품목 추가 -->
+  <div class="section">
+    <div class="sec-title">➕ 새 품목 추가</div>
+    <div class="add-form">
+      <div class="form-grid">
+        <div class="field">
+          <label>엑셀 컬럼 키 *</label>
+          <input type="text" id="n-key" placeholder="예) BP" style="text-transform:uppercase">
+          <span class="hint">오더지 엑셀의 열 문자 (A~ZZ)</span>
+        </div>
+        <div class="field">
+          <label>컬럼 번호 * <span style="color:var(--txt2);font-weight:400">(자동계산)</span></label>
+          <input type="number" id="n-col" placeholder="예) 68" readonly style="color:var(--txt2)">
+          <span class="hint">키 입력 시 자동 계산됩니다</span>
+        </div>
+        <div class="field">
+          <label>카테고리 *</label>
+          <input type="text" id="n-cat" placeholder="예) 의자" list="cat-list">
+          <datalist id="cat-list"></datalist>
+        </div>
+        <div class="field">
+          <label>품목명 *</label>
+          <input type="text" id="n-name" placeholder="예) 스탠딩의자">
+        </div>
+        <div class="field">
+          <label>세부사항</label>
+          <input type="text" id="n-detail" placeholder="예) 블랙">
+        </div>
+        <div class="field">
+          <label>품목 코드</label>
+          <input type="text" id="n-code" placeholder="예) EC-15">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" onclick="addItem()">✅ 품목 추가</button>
+        <button class="btn btn-secondary" onclick="clearForm()">초기화</button>
+        <span style="font-size:12px;color:var(--txt2);margin-left:8px">⚠️ 컬럼 키는 실제 오더지 엑셀의 열 위치와 일치해야 합니다</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 품목 목록 -->
+  <div class="section">
+    <div class="sec-title">📦 품목 목록</div>
+    <div class="tbl-wrap">
+      <div class="tbl-toolbar">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 품목명 검색..." oninput="renderTable()">
+        <select class="cat-filter" id="catFilter" onchange="renderTable()">
+          <option value="">전체 카테고리</option>
+        </select>
+        <span class="item-count" id="itemCount"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>컬럼 키</th>
+              <th>col#</th>
+              <th>카테고리</th>
+              <th>품목명</th>
+              <th>세부</th>
+              <th>코드</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="itemTbody"></tbody>
+        </table>
+      </div>
+      <div id="emptyMsg" class="empty" style="display:none">검색 결과가 없습니다</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+let adminPw = '';
+let ITEMS = [];
+let editingKey = null;
+
+// ── 로그인 ──────────────────────────────────────────────
+async function doLogin(){
+  const pw = document.getElementById('pwInput').value;
+  const res = await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pw})});
+  const d = await res.json();
+  if(d.ok){
+    adminPw = pw;
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('mainWrap').style.display='block';
+    loadItems();
+  } else {
+    document.getElementById('pwInput').style.borderColor='var(--red)';
+    toast('비밀번호가 틀렸습니다','err');
+  }
+}
+
+function logout(){
+  adminPw=''; ITEMS=[];
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('mainWrap').style.display='none';
+  document.getElementById('pwInput').value='';
+}
+
+// ── 컬럼 키 → 번호 자동 계산 ──────────────────────────
+document.getElementById('n-key').addEventListener('input', function(){
+  const key = this.value.toUpperCase().trim();
+  this.value = key;
+  if(!key){ document.getElementById('n-col').value=''; return; }
+  try {
+    let col = 0;
+    for(let i=0;i<key.length;i++){
+      col = col*26 + (key.charCodeAt(i)-64);
+    }
+    document.getElementById('n-col').value = col;
+  } catch(e){ document.getElementById('n-col').value=''; }
+});
+
+// ── 품목 로드 ──────────────────────────────────────────
+async function loadItems(){
+  const res = await fetch('/api/items');
+  ITEMS = await res.json();
+  updateCatFilter();
+  updateCatDatalist();
+  renderTable();
+}
+
+function updateCatFilter(){
+  const cats = [...new Set(ITEMS.map(i=>i.cat))];
+  const sel = document.getElementById('catFilter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">전체 카테고리</option>' +
+    cats.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+}
+
+function updateCatDatalist(){
+  const cats = [...new Set(ITEMS.map(i=>i.cat))];
+  document.getElementById('cat-list').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+}
+
+// ── 테이블 렌더링 ──────────────────────────────────────
+function renderTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const catF = document.getElementById('catFilter').value;
+  const filtered = ITEMS.filter(i =>
+    (!catF || i.cat===catF) &&
+    (!q || i.name.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q) || (i.code||'').toLowerCase().includes(q))
+  );
+  document.getElementById('itemCount').textContent = `${filtered.length} / ${ITEMS.length}개`;
+  document.getElementById('emptyMsg').style.display = filtered.length?'none':'block';
+
+  document.getElementById('itemTbody').innerHTML = filtered.map(item => {
+    if(editingKey === item.key) return editRowHTML(item);
+    return `
+      <tr id="row-${item.key}">
+        <td><span class="td-key">${item.key}</span></td>
+        <td><span class="td-col">${item.col}</span></td>
+        <td><span class="td-cat">${item.cat}</span></td>
+        <td style="font-weight:500">${item.name}</td>
+        <td style="color:var(--txt2);font-size:12px">${item.detail||'-'}</td>
+        <td><span class="td-code">${item.code||'-'}</span></td>
+        <td><div class="td-actions">
+          <button class="btn btn-secondary btn-sm" onclick="startEdit('${item.key}')">✏️ 수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.key}','${item.name}')">🗑</button>
+        </div></td>
+      </tr>`;
+  }).join('');
+}
+
+function editRowHTML(item){
+  return `
+    <tr id="row-${item.key}" style="background:rgba(79,142,247,.05)">
+      <td><span class="td-key">${item.key}</span></td>
+      <td><input class="edit-field" id="e-col" type="number" value="${item.col}" style="width:60px"></td>
+      <td><input class="edit-field" id="e-cat" value="${item.cat}" list="cat-list"></td>
+      <td><input class="edit-field" id="e-name" value="${item.name}"></td>
+      <td><input class="edit-field" id="e-detail" value="${item.detail||''}"></td>
+      <td><input class="edit-field" id="e-code" value="${item.code||''}"></td>
+      <td><div class="td-actions">
+        <button class="btn btn-success btn-sm" onclick="saveEdit('${item.key}')">저장</button>
+        <button class="btn btn-secondary btn-sm" onclick="cancelEdit()">취소</button>
+      </div></td>
+    </tr>`;
+}
+
+// ── CRUD ──────────────────────────────────────────────
+async function addItem(){
+  const key    = document.getElementById('n-key').value.toUpperCase().trim();
+  const col    = parseInt(document.getElementById('n-col').value);
+  const cat    = document.getElementById('n-cat').value.trim();
+  const name   = document.getElementById('n-name').value.trim();
+  const detail = document.getElementById('n-detail').value.trim();
+  const code   = document.getElementById('n-code').value.trim();
+
+  if(!key||!col||!cat||!name){ toast('컬럼 키, 카테고리, 품목명은 필수입니다','err'); return; }
+
+  const res = await fetch('/api/items',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Admin-PW':adminPw},
+    body:JSON.stringify({key,col,cat,name,detail,code})
+  });
+  const d = await res.json();
+  if(d.ok){
+    ITEMS = d.items;
+    updateCatFilter(); updateCatDatalist(); renderTable();
+    clearForm();
+    toast(`✅ "${name}" 추가 완료!`);
+  } else {
+    toast(d.error||'추가 실패','err');
+  }
+}
+
+function startEdit(key){ editingKey=key; renderTable(); }
+function cancelEdit(){ editingKey=null; renderTable(); }
+
+async function saveEdit(key){
+  const col    = parseInt(document.getElementById('e-col').value);
+  const cat    = document.getElementById('e-cat').value.trim();
+  const name   = document.getElementById('e-name').value.trim();
+  const detail = document.getElementById('e-detail').value.trim();
+  const code   = document.getElementById('e-code').value.trim();
+
+  if(!col||!cat||!name){ toast('카테고리, 품목명은 필수','err'); return; }
+
+  const res = await fetch(`/api/items/${key}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Admin-PW':adminPw},
+    body:JSON.stringify({col,cat,name,detail,code})
+  });
+  const d = await res.json();
+  if(d.ok){
+    ITEMS=d.items; editingKey=null;
+    updateCatFilter(); updateCatDatalist(); renderTable();
+    toast('수정 완료!');
+  } else {
+    toast(d.error||'수정 실패','err');
+  }
+}
+
+async function deleteItem(key, name){
+  if(!confirm(`"${name}" 품목을 삭제하시겠습니까?`)) return;
+  const res = await fetch(`/api/items/${key}`,{
+    method:'DELETE',
+    headers:{'X-Admin-PW':adminPw}
+  });
+  const d = await res.json();
+  if(d.ok){
+    ITEMS=d.items;
+    updateCatFilter(); updateCatDatalist(); renderTable();
+    toast(`"${name}" 삭제 완료`,'err');
+  } else {
+    toast(d.error||'삭제 실패','err');
+  }
+}
+
+function clearForm(){
+  ['n-key','n-col','n-cat','n-name','n-detail','n-code'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+}
+
+// ── 토스트 ─────────────────────────────────────────────
+function toast(msg,type){
+  const el=document.createElement('div');
+  el.className='toast'+(type?' '+type:'');
+  el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+</script>
+</body>
+</html>
