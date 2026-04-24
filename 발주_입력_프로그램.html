@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>렌탈 발주 입력 시스템</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3350;--accent:#4f8ef7;--accent2:#7c5cfc;--green:#36d399;--red:#ff6b6b;--yellow:#fbbf24;--text:#e8eaf6;--text2:#8892b0;--text3:#3a4060;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;font-size:14px;}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-size:16px;font-weight:700;}
+.logo-sub{font-size:11px;color:var(--text2);}
+
+/* 서버 상태 표시 */
+.server-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:5px;}
+.server-dot.on{background:var(--green);box-shadow:0 0 6px var(--green);}
+.server-dot.off{background:var(--yellow);}
+
+.tabs{display:flex;gap:2px;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border);}
+.tab{padding:10px 18px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.tab:hover{color:var(--text);}.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+.page{display:none;}.page.active{display:block;}
+.main{padding:24px;max-width:1400px;margin:0 auto;}
+.sec-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text2);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.section{margin-bottom:24px;}
+
+.grid{display:grid;gap:10px;}
+.g4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:800px){.g4{grid-template-columns:repeat(2,1fr);}}
+
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.5px;}
+.field input,.field select,.field textarea{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.1);}
+.field select option{background:var(--surface2);}
+.field textarea{resize:vertical;min-height:55px;}
+
+.cat-wrap{display:flex;flex-direction:column;gap:10px;}
+.cat-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cat-hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.cat-hdr:hover{background:rgba(79,142,247,.06);}
+.cat-dot{width:7px;height:7px;border-radius:50%;}
+.cat-name{font-size:12px;font-weight:700;color:var(--accent);}
+.cat-badge{font-size:10px;background:rgba(79,142,247,.15);color:var(--accent);padding:1px 7px;border-radius:99px;font-family:'JetBrains Mono',monospace;}
+.cat-arrow{margin-left:auto;color:var(--text2);font-size:11px;transition:transform .2s;}
+.cat-block.collapsed .cat-arrow{transform:rotate(-90deg);}
+.cat-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));}
+.cat-block.collapsed .cat-items{display:none;}
+
+.item-cell{padding:9px 12px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
+.item-cell:hover{background:rgba(79,142,247,.03);}
+.item-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.3;}
+.item-code{font-size:10px;color:var(--accent2);font-family:'JetBrains Mono',monospace;}
+.item-detail{font-size:10px;color:var(--text2);}
+.item-input{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 7px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;outline:none;width:100%;text-align:center;transition:border-color .2s,background .2s;}
+.item-input:focus{border-color:var(--accent);}
+.item-input.filled{border-color:var(--green);color:var(--green);background:rgba(54,211,153,.07);}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+
+.order-list{display:flex;flex-direction:column;gap:6px;}
+.order-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .2s;}
+.order-card:hover{border-color:var(--accent);}
+.order-no{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--text3);min-width:32px;text-align:center;}
+.order-info{flex:1;}
+.order-name{font-weight:700;font-size:14px;}
+.order-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.order-amt{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;color:var(--green);}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .2s;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:rgba(255,107,107,.12);color:var(--red);border:1px solid rgba(255,107,107,.3);}
+.btn-danger:hover{background:rgba(255,107,107,.22);}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:5px;}
+.btn-lg{padding:11px 26px;font-size:14px;}
+
+.tbadge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.tbadge-pre{background:rgba(54,211,153,.15);color:var(--green);}
+.tbadge-post{background:rgba(251,191,36,.15);color:var(--yellow);}
+
+.action-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:100;}
+.action-bar-info{font-size:12px;color:var(--text2);}
+.action-bar-info strong{color:var(--text);}
+.spacer{height:70px;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:92vw;}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:8px;}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+
+/* 서버 모드 안내 박스 */
+.info-box{border-radius:9px;padding:14px 16px;font-size:12px;line-height:1.7;margin-bottom:14px;}
+.info-box-green{background:rgba(54,211,153,.08);border:1px solid rgba(54,211,153,.25);color:var(--green);}
+.info-box-yellow{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);color:var(--yellow);}
+.info-box strong{font-weight:700;}
+
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(79,142,247,.04);}
+.upload-icon{font-size:28px;margin-bottom:8px;}
+.upload-text{font-size:14px;font-weight:600;margin-bottom:4px;}
+.upload-sub{font-size:11px;color:var(--text2);}
+
+.toast-wrap{position:fixed;top:70px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px;}
+.toast{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;animation:slideIn .2s ease;border-left:3px solid var(--green);}
+.toast.err{border-left-color:var(--red);}.toast.info{border-left-color:var(--accent);}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;}
+.sum-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px;}
+.sum-label{font-size:10px;color:var(--text2);font-weight:600;margin-bottom:5px;}
+.sum-val{font-size:20px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--accent);}
+.sum-unit{font-size:11px;color:var(--text2);margin-left:3px;}
+.empty{text-align:center;padding:50px 20px;color:var(--text2);}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.3;}
+
+.step{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-text{font-size:12px;line-height:1.6;color:var(--text);}
+code{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📋</div>
+    <div>
+      <div class="logo-text">렌탈 발주 시스템</div>
+      <div class="logo-sub">
+        <span class="server-dot" id="serverDot"></span>
+        <span id="serverStatus">서버 확인 중...</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-secondary btn-sm" onclick="showTab('list')">📁 목록 <span id="badge"></span></button>
+    <button class="btn btn-primary" onclick="openExport()">⬇️ 오더지 내보내기</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-input" onclick="showTab('input')">✏️ 발주 입력</div>
+  <div class="tab" id="tab-list" onclick="showTab('list')">📋 목록</div>
+  <div class="tab" id="tab-summary" onclick="showTab('summary')">📊 집계</div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- 입력 -->
+<div class="page active" id="page-input">
+<div class="main">
+  <div class="section">
+    <div class="sec-title">🗓 행사 정보</div>
+    <div class="field">
+      <label>행사기간 — 오더지 A3 셀에 입력됩니다</label>
+      <input type="text" id="ev-period" placeholder="예) 2026.05.10 ~ 05.12 (3일간)">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">🏢 업체 정보</div>
+    <div class="grid g4" style="margin-bottom:10px;">
+      <div class="field">
+        <label>No <small style="color:var(--text3)">A열</small></label>
+        <input type="number" id="f-no" placeholder="자동">
+      </div>
+      <div class="field">
+        <label>부스 NO <small style="color:var(--text3)">B열</small></label>
+        <input type="text" id="f-booth" placeholder="예) A-01">
+      </div>
+      <div class="field" style="grid-column:span 2">
+        <label>업체명 * <small style="color:var(--text3)">C열</small></label>
+        <input type="text" id="f-company" placeholder="업체명 필수">
+      </div>
+      <div class="field">
+        <label>소계 VAT별도 <small style="color:var(--text3)">F열</small></label>
+        <input type="number" id="f-subtotal" placeholder="0">
+      </div>
+      <div class="field">
+        <label>입금방법 <small style="color:var(--text3)">D열</small></label>
+        <select id="f-payment">
+          <option value="">선택</option>
+          <option>입금</option><option>카드</option><option>현금</option>
+          <option>씨티</option><option>달러</option><option>장치</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>입금 <small style="color:var(--text3)">BT열</small></label>
+        <input type="text" id="f-bt" placeholder="카드·현금·씨티·달러·장치">
+      </div>
+      <div class="field">
+        <label>세금계산서 <small style="color:var(--text3)">BU열</small></label>
+        <input type="text" id="f-bu" placeholder="세금·계산서X·추후정산">
+      </div>
+      <div class="field">
+        <label>담당자 <small style="color:var(--text3)">BV열</small></label>
+        <input type="text" id="f-bv" placeholder="담당자명">
+      </div>
+      <div class="field">
+        <label>발주 구분</label>
+        <select id="f-type">
+          <option value="pre">출고 전 발주 (row 12~63)</option>
+          <option value="post">출고 후 추가발주 (row 67~71)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>비고 <small style="color:var(--text3)">BS열 — 설치·철거 일정 등</small></label>
+      <textarea id="f-memo" placeholder="예) 설치: 5/10, 철거: 5/12"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">📦 품목 수량 입력</div>
+    <div class="cat-wrap" id="catWrap"></div>
+  </div>
+  <div class="spacer"></div>
+</div>
+<div class="action-bar">
+  <div class="action-bar-info">품목 <strong id="fcnt">0</strong>종 &nbsp;|&nbsp; 총 <strong id="fqty">0</strong>개</div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-secondary" onclick="resetForm()">🔄 초기화</button>
+    <button class="btn btn-primary btn-lg" onclick="saveOrder()">✅ 발주 저장</button>
+  </div>
+</div>
+</div>
+
+<!-- 목록 -->
+<div class="page" id="page-list">
+<div class="main">
+  <div class="section">
+    <div class="sec-title">📋 저장된 발주</div>
+    <div id="listWrap"></div>
+  </div>
+  <div class="spacer"></div>
+</div>
+<div class="action-bar">
+  <div class="action-bar-info">총 <strong id="total-cnt">0</strong>건</div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-secondary" onclick="showTab('input')">✏️ 새 발주</button>
+    <button class="btn btn-primary" onclick="openExport()">⬇️ 오더지 내보내기</button>
+  </div>
+</div>
+</div>
+
+<!-- 집계 -->
+<div class="page" id="page-summary">
+<div class="main">
+  <div class="section">
+    <div class="sec-title">📊 집계</div>
+    <div class="sum-grid" id="sumGrid"></div>
+    <div id="sumItems"></div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</div>
+
+<!-- 내보내기 모달 -->
+<div class="modal-bg" id="exportModal" style="display:none">
+  <div class="modal">
+    <div class="modal-title">⬇️ 오더지 내보내기</div>
+
+    <!-- 서버 연결됨 -->
+    <div id="modeServer" style="display:none">
+      <div class="info-box info-box-green">
+        ✅ <strong>서버 연결됨</strong> — 원본 오더지 양식의 색상·서식이 그대로 보존됩니다.<br>
+        <code>오더지_양식.xlsx</code> 파일이 server.py와 같은 폴더에 있어야 합니다.
+      </div>
+      <div class="modal-sub" style="margin-bottom:0">
+        저장된 발주 <strong id="order-count-disp">0</strong>건을 오더지 양식에 채워 다운로드합니다.
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeExport()">취소</button>
+        <button class="btn btn-primary" onclick="doExportServer()">📥 오더지 다운로드</button>
+      </div>
+    </div>
+
+    <!-- 서버 미연결 -->
+    <div id="modeClient" style="display:none">
+      <div class="info-box info-box-yellow">
+        ⚠️ <strong>서버 미연결</strong> — 서식이 일부 손실될 수 있습니다.<br>
+        서식을 완벽히 보존하려면 <code>server.py</code>를 실행하세요.
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div class="step"><div class="step-num">1</div><div class="step-text">터미널에서: <code>python3 server.py</code> 실행</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text"><code>오더지_양식.xlsx</code>를 <code>server.py</code>와 같은 폴더에 저장</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">브라우저에서 <code>http://localhost:5000</code> 접속 후 사용</div></div>
+      </div>
+
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">또는 지금 바로 양식 파일을 업로드하여 내보내기 (서식 손실 가능):</div>
+      <div class="upload-zone" onclick="document.getElementById('xlsxFile').click()" id="uploadZone">
+        <div class="upload-icon">📂</div>
+        <div class="upload-text">오더지_양식.xlsx 업로드</div>
+        <div class="upload-sub">클릭하거나 드래그하여 업로드</div>
+      </div>
+      <input type="file" id="xlsxFile" accept=".xlsx,.xlsm" style="display:none">
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeExport()">취소</button>
+        <button class="btn btn-secondary" onclick="doExportClient()">📥 내보내기 (서식 손실)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 삭제 모달 -->
+<div class="modal-bg" id="delModal" style="display:none">
+  <div class="modal">
+    <div class="modal-title">🗑 발주 삭제</div>
+    <div class="modal-sub" id="delMsg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('delModal').style.display='none'">취소</button>
+      <button class="btn btn-danger" onclick="doDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ 품목 정의 (컬럼 번호 1-based, 검증 완료) ══
+const ITEMS = [
+  {key:'I', col:9,  cat:'진열대 1M',         name:'1단진열대',     detail:'',              code:'ED-01'},
+  {key:'J', col:10, cat:'진열대 1M',         name:'2단진열대',     detail:'',              code:'ED-02'},
+  {key:'K', col:11, cat:'진열대 1M',         name:'3단진열대',     detail:'',              code:'ED-03'},
+  {key:'L', col:12, cat:'진열대 1.5M',       name:'1단진열대',     detail:'',              code:'ED-01'},
+  {key:'M', col:13, cat:'진열대 1.5M',       name:'2단진열대',     detail:'',              code:'ED-02'},
+  {key:'N', col:14, cat:'진열대 1.5M',       name:'3단진열대',     detail:'',              code:'ED-03'},
+  {key:'O', col:15, cat:'진열대 2M',         name:'1단진열대',     detail:'',              code:'ED-01'},
+  {key:'P', col:16, cat:'진열대 2M',         name:'2단진열대',     detail:'',              code:'ED-02'},
+  {key:'Q', col:17, cat:'진열대 2M',         name:'3단진열대',     detail:'',              code:'ED-03'},
+  {key:'R', col:18, cat:'쇼케이스',           name:'1단쇼케이스',   detail:'',              code:'ED-07'},
+  {key:'S', col:19, cat:'쇼케이스',           name:'3단쇼케이스',   detail:'',              code:'ED-08'},
+  {key:'T', col:20, cat:'쇼케이스',           name:'쇼케이스',      detail:'(2/1)',         code:'ED-09'},
+  {key:'U', col:21, cat:'쇼케이스',           name:'쇼케이스',      detail:'(타워)',        code:'ED-10'},
+  {key:'V', col:22, cat:'진열대/선반',        name:'진열대',        detail:'560×560 H1000', code:'ED-05'},
+  {key:'W', col:23, cat:'진열대/선반',        name:'선반',          detail:'',              code:'ED-18'},
+  {key:'Z',  col:26, cat:'원형테이블',        name:'백색',          detail:'Ø750',          code:'ET-01'},
+  {key:'AA', col:27, cat:'원형테이블',        name:'하이그로시',    detail:'Ø600',          code:'ET-01-1'},
+  {key:'AB', col:28, cat:'원형테이블',        name:'하이그로시',    detail:'Ø700',          code:'ET-01-1'},
+  {key:'AC', col:29, cat:'원형테이블',        name:'무늬목',        detail:'Ø750',          code:'ET-02'},
+  {key:'AF', col:32, cat:'사각테이블(다리1)', name:'흰색',          detail:'600×600',       code:'ET-09'},
+  {key:'AG', col:33, cat:'사각테이블(다리1)', name:'흰색',          detail:'750×750',       code:'ET-09'},
+  {key:'AH', col:34, cat:'사각테이블(다리1)', name:'상판하이그로시',detail:'700×700',       code:'ET-09-1'},
+  {key:'AK', col:37, cat:'사각테이블(다리4)', name:'450×1200',      detail:'',              code:'ET-11'},
+  {key:'AL', col:38, cat:'사각테이블(다리4)', name:'700×1200',      detail:'',              code:'ET-12'},
+  {key:'AM', col:39, cat:'사각테이블(다리4)', name:'700×1800',      detail:'',              code:'ET-12'},
+  {key:'AN', col:40, cat:'사각테이블(다리4)', name:'800×1200',      detail:'하이그로시',    code:'ET-12-2'},
+  {key:'AO', col:41, cat:'사각테이블(다리4)', name:'듀라테이블',    detail:'1800',          code:'ET-14'},
+  {key:'AP', col:42, cat:'사각테이블(다리4)', name:'테이블보(검)',  detail:'',              code:''},
+  {key:'AQ', col:43, cat:'사각테이블(다리4)', name:'테이블보(백)',  detail:'',              code:''},
+  {key:'AT', col:46, cat:'의자',              name:'접의자',        detail:'',              code:'EC-01'},
+  {key:'AU', col:47, cat:'의자',              name:'크림접의자',    detail:'',              code:'EC-01-1'},
+  {key:'AV', col:48, cat:'의자',              name:'피노키오(검)',  detail:'',              code:'EC-06'},
+  {key:'AW', col:49, cat:'의자',              name:'피노키오(백)',  detail:'',              code:'EC-06'},
+  {key:'AX', col:50, cat:'의자',              name:'땅콩(검)',      detail:'',              code:'EC-07'},
+  {key:'AY', col:51, cat:'의자',              name:'땅콩(백)',      detail:'',              code:'EC-07'},
+  {key:'AZ', col:52, cat:'의자',              name:'파워의자',      detail:'',              code:'EC-11'},
+  {key:'BC', col:55, cat:'비품',              name:'일카',          detail:'',              code:'EB-01'},
+  {key:'BD', col:56, cat:'비품',              name:'신카',          detail:'',              code:'EB-02'},
+  {key:'BE', col:57, cat:'비품',              name:'차단봉(청색)',  detail:'',              code:'EB-11'},
+  {key:'BF', col:58, cat:'비품',              name:'차단봉(검정)',  detail:'',              code:'EB-11'},
+  {key:'BG', col:59, cat:'비품',              name:'휴지통 50L',    detail:'',              code:'EB-15'},
+  {key:'BJ', col:62, cat:'기타',              name:'냉온수기',      detail:'',              code:'EE-01'},
+  {key:'BK', col:63, cat:'기타',              name:'생수',          detail:'',              code:'EE-01-1'},
+  {key:'BL', col:64, cat:'기타',              name:'냉장고 80L',    detail:'',              code:'EE-02'},
+  {key:'BM', col:65, cat:'기타',              name:'LED TV 43"',    detail:'',              code:'EE-12'},
+  {key:'BN', col:66, cat:'기타',              name:'LED TV 50"',    detail:'',              code:'EE-12'},
+  {key:'BO', col:67, cat:'기타',              name:'LED TV 65"',    detail:'',              code:'EE-12'},
+  {key:'BR', col:70, cat:'패브릭',            name:'패브릭인포',    detail:'1200',          code:''},
+];
+
+const BASE = {no:1,booth:2,company:3,payment:4,subtotal:6,memo:71,bt:72,bu:73,bv:74};
+const ROW_PRE_START=13, ROW_PRE_END=63, ROW_POST_START=67, ROW_POST_END=71;
+
+let orders = JSON.parse(localStorage.getItem('ro_v3')||'[]');
+let editId=null, delId=null, templateBuf=null, serverOnline=false;
+
+// ── 서버 연결 확인 ──
+async function checkServer(){
+  try {
+    const r = await fetch('/export', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({orders:[]}), signal:AbortSignal.timeout(2000)});
+    serverOnline = true;
+  } catch(e) {
+    serverOnline = false;
+  }
+  const dot = document.getElementById('serverDot');
+  const status = document.getElementById('serverStatus');
+  if(serverOnline){
+    dot.className='server-dot on';
+    status.textContent='서버 연결됨 (서식 보존)';
+  } else {
+    dot.className='server-dot off';
+    status.textContent='서버 미연결';
+  }
+}
+checkServer();
+
+// ── 품목 UI 빌드 ──
+(function(){
+  const catMap={};
+  ITEMS.forEach(item=>{ if(!catMap[item.cat]) catMap[item.cat]=[]; catMap[item.cat].push(item); });
+  const colors={'진열대 1M':'#4f8ef7','진열대 1.5M':'#818cf8','진열대 2M':'#a78bfa','쇼케이스':'#fbbf24','진열대/선반':'#f472b6','원형테이블':'#34d399','사각테이블(다리1)':'#60a5fa','사각테이블(다리4)':'#38bdf8','의자':'#fb923c','비품':'#c084fc','기타':'#2dd4bf','패브릭':'#f9a8d4'};
+  const wrap=document.getElementById('catWrap');
+  Object.entries(catMap).forEach(([cat,items])=>{
+    const color=colors[cat]||'#4f8ef7';
+    const el=document.createElement('div');
+    el.className='cat-block'; el.id='cb-'+cat;
+    el.innerHTML=`<div class="cat-hdr" onclick="toggleCat(this.closest('.cat-block'))"><div class="cat-dot" style="background:${color}"></div><div class="cat-name">${cat}</div><div class="cat-badge">${items.length}종</div><div class="cat-arrow">▼</div></div><div class="cat-items">${items.map(item=>`<div class="item-cell"><div class="item-name">${item.name}</div>${item.detail?`<div class="item-detail">${item.detail}</div>`:''} ${item.code?`<div class="item-code">${item.code}</div>`:''}<input type="number" min="0" class="item-input" id="ii-${item.key}" placeholder="0" oninput="onQ(this)"></div>`).join('')}</div>`;
+    wrap.appendChild(el);
+  });
+})();
+
+function toggleCat(block){ block.classList.toggle('collapsed'); }
+function onQ(el){ const v=parseInt(el.value); el.classList.toggle('filled',v>0); if(v<=0) el.value=''; updateFoot(); }
+function updateFoot(){ let c=0,q=0; ITEMS.forEach(it=>{ const v=parseInt(document.getElementById('ii-'+it.key)?.value)||0; if(v>0){c++;q+=v;} }); document.getElementById('fcnt').textContent=c; document.getElementById('fqty').textContent=q; }
+
+function showTab(t){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.tab').forEach(tb=>tb.classList.remove('active')); document.getElementById('page-'+t).classList.add('active'); document.getElementById('tab-'+t).classList.add('active'); if(t==='list') renderList(); if(t==='summary') renderSummary(); }
+
+function getForm(){
+  const items={};
+  ITEMS.forEach(it=>{ const v=parseInt(document.getElementById('ii-'+it.key)?.value)||0; if(v>0) items[it.key]=v; });
+  return {id:editId||Date.now(),no:document.getElementById('f-no').value,booth:document.getElementById('f-booth').value.trim(),company:document.getElementById('f-company').value.trim(),subtotal:parseInt(document.getElementById('f-subtotal').value)||0,payment:document.getElementById('f-payment').value,bt:document.getElementById('f-bt').value.trim(),bu:document.getElementById('f-bu').value.trim(),bv:document.getElementById('f-bv').value.trim(),memo:document.getElementById('f-memo').value.trim(),type:document.getElementById('f-type').value,period:document.getElementById('ev-period').value.trim(),items};
+}
+
+function saveOrder(){
+  const d=getForm();
+  if(!d.company){ toast('업체명을 입력해주세요.','err'); return; }
+  const preN=orders.filter(o=>o.type==='pre').length;
+  const postN=orders.filter(o=>o.type==='post').length;
+  if(!editId){
+    if(d.type==='pre'&&preN>=(ROW_PRE_END-ROW_PRE_START+1)){ toast(`출고 전 최대 ${ROW_PRE_END-ROW_PRE_START+1}건`,'err'); return; }
+    if(d.type==='post'&&postN>=(ROW_POST_END-ROW_POST_START+1)){ toast(`출고 후 최대 ${ROW_POST_END-ROW_POST_START+1}건`,'err'); return; }
+  }
+  if(editId){ const idx=orders.findIndex(o=>o.id===editId); if(idx>=0) orders[idx]=d; editId=null; toast('수정 완료 ✏️','info'); }
+  else { if(!d.no){ d.no=orders.filter(o=>o.type===d.type).length+1; } orders.push(d); toast('발주 저장 완료! ✅'); }
+  save(); resetForm(); updateBadge();
+}
+
+function editOrder(id){
+  const o=orders.find(o=>o.id===id); if(!o) return;
+  editId=id;
+  document.getElementById('f-no').value=o.no||'';
+  document.getElementById('f-booth').value=o.booth||'';
+  document.getElementById('f-company').value=o.company||'';
+  document.getElementById('f-subtotal').value=o.subtotal||'';
+  document.getElementById('f-payment').value=o.payment||'';
+  document.getElementById('f-bt').value=o.bt||'';
+  document.getElementById('f-bu').value=o.bu||'';
+  document.getElementById('f-bv').value=o.bv||'';
+  document.getElementById('f-memo').value=o.memo||'';
+  document.getElementById('f-type').value=o.type||'pre';
+  if(o.period) document.getElementById('ev-period').value=o.period;
+  ITEMS.forEach(it=>{ const el=document.getElementById('ii-'+it.key); if(!el) return; const v=o.items[it.key]||0; el.value=v>0?v:''; el.classList.toggle('filled',v>0); });
+  updateFoot(); showTab('input'); toast(o.company+' 수정 중...','info');
+}
+
+function askDelete(id){ delId=id; const o=orders.find(o=>o.id===id); document.getElementById('delMsg').textContent=`"${o.company}" 발주를 삭제하시겠습니까?`; document.getElementById('delModal').style.display='flex'; }
+function doDelete(){ orders=orders.filter(o=>o.id!==delId); save(); renderList(); updateBadge(); document.getElementById('delModal').style.display='none'; toast('삭제됨','err'); }
+function resetForm(){ editId=null; ['f-no','f-booth','f-company','f-subtotal','f-bt','f-bu','f-bv','f-memo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); document.getElementById('f-payment').value=''; document.getElementById('f-type').value='pre'; ITEMS.forEach(it=>{const el=document.getElementById('ii-'+it.key);if(el){el.value='';el.classList.remove('filled');}}); updateFoot(); }
+function save(){ localStorage.setItem('ro_v3',JSON.stringify(orders)); }
+function updateBadge(){ const n=orders.length; document.getElementById('badge').innerHTML=n>0?`<span style="background:var(--accent);color:#fff;border-radius:99px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px">${n}</span>`:''; document.getElementById('total-cnt').textContent=n; }
+
+function renderList(){
+  const wrap=document.getElementById('listWrap');
+  if(!orders.length){ wrap.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div style="font-size:15px;font-weight:600;color:var(--text)">저장된 발주가 없습니다</div><div style="font-size:12px;margin-top:4px">발주 입력 탭에서 추가하세요</div></div>`; return; }
+  const pre=orders.filter(o=>o.type!=='post'), post=orders.filter(o=>o.type==='post');
+  let html='';
+  if(pre.length){ html+=`<div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:6px">📦 출고 전 발주 (${pre.length}건)</div>`; html+=pre.map(cardHTML).join(''); }
+  if(post.length){ html+=`<div style="font-size:11px;font-weight:700;color:var(--yellow);margin:14px 0 6px">➕ 출고 후 추가발주 (${post.length}건)</div>`; html+=post.map(cardHTML).join(''); }
+  wrap.innerHTML=`<div class="order-list">${html}</div>`;
+}
+
+function cardHTML(o){
+  const iqty=Object.values(o.items).reduce((a,b)=>a+b,0), icnt=Object.keys(o.items).length;
+  const badge=o.type==='post'?'<span class="tbadge tbadge-post">추가</span>':'<span class="tbadge tbadge-pre">출고전</span>';
+  return `<div class="order-card" onclick="editOrder(${o.id})">${badge}<div class="order-no">${o.no||'-'}</div><div class="order-info"><div class="order-name">${o.company}</div><div class="order-meta">${o.booth?'부스 '+o.booth+' | ':''}품목 ${icnt}종 · 수량 ${iqty}개${o.payment?' | '+o.payment:''}</div></div><div class="order-amt">${o.subtotal?o.subtotal.toLocaleString()+'원':'-'}</div><div style="display:flex;gap:5px" onclick="event.stopPropagation()"><button class="btn btn-secondary btn-sm" onclick="editOrder(${o.id})">✏️</button><button class="btn btn-danger btn-sm" onclick="askDelete(${o.id})">🗑</button></div></div>`;
+}
+
+function renderSummary(){
+  const pre=orders.filter(o=>o.type!=='post'),post=orders.filter(o=>o.type==='post');
+  const allAmt=orders.reduce((a,o)=>a+(o.subtotal||0),0),allQty=orders.reduce((a,o)=>a+Object.values(o.items).reduce((x,y)=>x+y,0),0);
+  const payMap={}; orders.forEach(o=>{if(o.payment) payMap[o.payment]=(payMap[o.payment]||0)+1;});
+  document.getElementById('sumGrid').innerHTML=[['총 업체',orders.length,'건'],['출고 전',pre.length,'건'],['출고 후',post.length,'건'],['총 수량',allQty,'개'],['총 금액',allAmt.toLocaleString(),'원'],...Object.entries(payMap).map(([k,v])=>[k,v,'건'])].map(([l,v,u])=>`<div class="sum-card"><div class="sum-label">${l}</div><div class="sum-val">${v}<span class="sum-unit">${u}</span></div></div>`).join('');
+  const totals={};
+  orders.forEach(o=>Object.entries(o.items).forEach(([k,v])=>totals[k]=(totals[k]||0)+v));
+  const sorted=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  if(!sorted.length){document.getElementById('sumItems').innerHTML='';return;}
+  const rows=sorted.map(([key,qty])=>{const item=ITEMS.find(i=>i.key===key);if(!item)return'';return`<div style="display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border)"><div style="flex:1;font-size:12px;font-weight:600">${item.cat} · ${item.name}${item.detail?` <span style="color:var(--text2);font-size:10px">(${item.detail})</span>`:''}${item.code?` <span style="color:var(--accent2);font-size:10px;font-family:monospace">[${item.code}]</span>`:''}</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--green)">${qty}<span style="font-size:11px;color:var(--text2);margin-left:2px">개</span></div></div>`;}).join('');
+  document.getElementById('sumItems').innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">품목별 총 수량</div><div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">${rows}</div>`;
+}
+
+// ══ 내보내기 ══
+function openExport(){
+  await_check().then(()=>{
+    document.getElementById('order-count-disp').textContent = orders.length;
+    document.getElementById('modeServer').style.display = serverOnline ? '' : 'none';
+    document.getElementById('modeClient').style.display = serverOnline ? 'none' : '';
+    document.getElementById('exportModal').style.display='flex';
+  });
+}
+async function await_check(){ await checkServer(); }
+function closeExport(){ document.getElementById('exportModal').style.display='none'; }
+
+// 서버 모드 — Python이 openpyxl로 처리 (서식 완벽 보존)
+async function doExportServer(){
+  if(!orders.length){ toast('저장된 발주가 없습니다.','err'); return; }
+  try {
+    toast('오더지 생성 중...','info');
+    const res = await fetch('/export', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({orders})
+    });
+    if(!res.ok){
+      const err = await res.json();
+      toast('오류: '+(err.error||res.status),'err'); return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url;
+    a.download=`오더지_${new Date().toISOString().slice(0,10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    closeExport();
+    toast('오더지 다운로드 완료! 📥 (서식 보존)');
+  } catch(e){ toast('서버 오류: '+e.message,'err'); }
+}
+
+// 클라이언트 모드 — XLSX.js (서식 손실 가능)
+document.getElementById('xlsxFile').addEventListener('change',function(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ templateBuf=ev.target.result; document.getElementById('uploadZone').innerHTML=`<div class="upload-icon">✅</div><div class="upload-text">${file.name} 업로드 완료</div><div class="upload-sub">아래 내보내기 버튼을 클릭하세요</div>`; toast('파일 업로드 완료','info'); };
+  reader.readAsArrayBuffer(file);
+});
+const uz=document.getElementById('uploadZone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+uz.addEventListener('drop',e=>{ e.preventDefault(); uz.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(!f) return; const reader=new FileReader(); reader.onload=ev=>{ templateBuf=ev.target.result; uz.innerHTML=`<div class="upload-icon">✅</div><div class="upload-text">${f.name}</div><div class="upload-sub">업로드 완료</div>`; toast('파일 업로드 완료','info'); }; reader.readAsArrayBuffer(f); });
+
+function setCell(ws,r,c,v){ const addr=XLSX.utils.encode_cell({r,c}); if(!ws[addr]) ws[addr]={}; ws[addr].v=v; ws[addr].t=typeof v==='number'?'n':'s'; if(ws[addr].f) delete ws[addr].f; }
+
+function doExportClient(){
+  if(!orders.length){ toast('저장된 발주가 없습니다.','err'); return; }
+  if(!templateBuf){ toast('양식 파일을 먼저 업로드하세요.','err'); return; }
+  try {
+    const wb=XLSX.read(templateBuf,{type:'array',cellStyles:true,bookVBA:true});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const period=(orders[0]?.period||'').trim();
+    if(period) setCell(ws,2,0,'행사기간 : '+period);
+    const pre=orders.filter(o=>o.type!=='post'), post=orders.filter(o=>o.type==='post');
+    function write(o,r){ setCell(ws,r,BASE.no-1,o.no||1); setCell(ws,r,BASE.booth-1,o.booth||''); setCell(ws,r,BASE.company-1,o.company); setCell(ws,r,BASE.payment-1,o.payment||''); if(o.subtotal) setCell(ws,r,BASE.subtotal-1,o.subtotal); if(o.memo) setCell(ws,r,BASE.memo-1,o.memo); if(o.bt) setCell(ws,r,BASE.bt-1,o.bt); if(o.bu) setCell(ws,r,BASE.bu-1,o.bu); if(o.bv) setCell(ws,r,BASE.bv-1,o.bv); ITEMS.forEach(item=>{ const qty=o.items[item.key]; if(qty>0) setCell(ws,r,item.col-1,qty); }); }
+    pre.forEach((o,i)=>{ if(ROW_PRE_START-1+i<=ROW_PRE_END-1) write(o,ROW_PRE_START-1+i); });
+    post.forEach((o,i)=>{ if(ROW_POST_START-1+i<=ROW_POST_END-1) write(o,ROW_POST_START-1+i); });
+    XLSX.writeFile(wb,`오더지_${new Date().toISOString().slice(0,10)}.xlsx`);
+    closeExport(); toast('다운로드 완료 (서식 일부 손실될 수 있음)','info');
+  } catch(e){ toast('오류: '+e.message,'err'); }
+}
+
+function toast(msg,type){ const el=document.createElement('div'); el.className='toast'+(type?' '+type:''); const icon=type==='err'?'❌':type==='info'?'ℹ️':'✅'; el.innerHTML=`<span>${icon}</span><span>${msg}</span>`; document.getElementById('toasts').appendChild(el); setTimeout(()=>el.remove(),3500); }
+
+updateBadge(); updateFoot();
+</script>
+</body>
+</html>
