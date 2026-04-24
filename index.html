@@ -357,7 +357,7 @@ async function checkServer(){
 checkServer();
 
 // ── 품목 UI 빌드 ──
-(function buildCats(){
+function buildCats(){
   const catMap={};
   ITEMS.forEach(item=>{ if(!catMap[item.cat]) catMap[item.cat]=[]; catMap[item.cat].push(item); });
   const colors={'진열대 1M':'#4f8ef7','진열대 1.5M':'#818cf8','진열대 2M':'#a78bfa','쇼케이스':'#fbbf24','진열대/선반':'#f472b6','원형테이블':'#34d399','사각테이블(다리1)':'#60a5fa','사각테이블(다리4)':'#38bdf8','의자':'#fb923c','비품':'#c084fc','기타':'#2dd4bf','패브릭':'#f9a8d4'};
@@ -369,7 +369,7 @@ checkServer();
     el.innerHTML=`<div class="cat-hdr" onclick="toggleCat(this.closest('.cat-block'))"><div class="cat-dot" style="background:${color}"></div><div class="cat-name">${cat}</div><div class="cat-badge">${items.length}종</div><div class="cat-arrow">▼</div></div><div class="cat-items">${items.map(item=>`<div class="item-cell"><div class="item-name">${item.name}</div>${item.detail?`<div class="item-detail">${item.detail}</div>`:''} ${item.code?`<div class="item-code">${item.code}</div>`:''}<input type="number" min="0" class="item-input" id="ii-${item.key}" placeholder="0" oninput="onQ(this)"></div>`).join('')}</div>`;
     wrap.appendChild(el);
   });
-});
+}
 
 function toggleCat(block){ block.classList.toggle('collapsed'); }
 function onQ(el){ const v=parseInt(el.value); el.classList.toggle('filled',v>0); if(v<=0) el.value=''; updateFoot(); }
